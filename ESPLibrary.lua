@@ -1,3 +1,4 @@
+
 --[[
   Made completely by deproxies <3
 ]]
@@ -12,6 +13,11 @@ local functions = {
     showname = true,
     usedisplayname = false,
     
+    -- player text positioning (Top or Bottom)
+    namePosition = "Top",
+    healthPosition = "Bottom",
+    distancePosition = "Bottom",
+    
     -- npc settings
     npcenabled = true,
     npcshowskeleton = true,
@@ -20,6 +26,11 @@ local functions = {
     npccolor = Color3.fromRGB(255, 255, 0),
     npcshowhealth = true,
     npcshowname = true,
+    
+    -- npc text positioning (Top or Bottom)
+    npcnamePosition = "Top",
+    npchealthPosition = "Bottom",
+    npcdistancePosition = "Bottom",
 
     -- item settings
     itemsenabled = true,
@@ -59,14 +70,26 @@ local function draw_esp(obj, hum, isnpc, config)
     local cam = workspace.CurrentCamera
     
     local box = Drawing.new("Square")
-    local name = Drawing.new("Text")
+    local text_top = Drawing.new("Text")
+    local text_bottom = Drawing.new("Text")
+    local head_circle = Drawing.new("Circle")
     
     box.Visible = false
     box.Thickness = 1
-    name.Visible = false
-    name.Size = 16
-    name.Center = true
-    name.Outline = true
+    
+    text_top.Visible = false
+    text_top.Size = 16
+    text_top.Center = true
+    text_top.Outline = true
+
+    text_bottom.Visible = false
+    text_bottom.Size = 16
+    text_bottom.Center = true
+    text_bottom.Outline = true
+    
+    head_circle.Visible = false
+    head_circle.Thickness = 1
+    head_circle.Filled = false
 
     local skeleton_lines = {}
     for i = 1, #skeleton_parts do
@@ -106,40 +129,85 @@ local function draw_esp(obj, hum, isnpc, config)
                 local show_h = isnpc and config.npcshowhealth or config.showhealth
                 local show_d = isnpc and config.npcshowdistance or config.showdistance
                 
-                local label = ""
-                if show_n then
-                    if isnpc then label = obj.Name else
-                        local p = game.Players:GetPlayerFromCharacter(obj)
-                        label = config.usedisplayname and p.DisplayName or p.Name
+                local pos_n = isnpc and config.npcnamePosition or config.namePosition
+                local pos_h = isnpc and config.npchealthPosition or config.healthPosition
+                local pos_d = isnpc and config.npcdistancePosition or config.distancePosition
+                
+                local t_label = ""
+                local b_label = ""
+
+                local function append_label(text, position)
+                    if position == "Top" then
+                        t_label = t_label == "" and text or t_label .. " " .. text
+                    else
+                        b_label = b_label == "" and text or b_label .. " " .. text
                     end
+                end
+
+                if show_n then
+                    local n_text = ""
+                    if isnpc then n_text = obj.Name else
+                        local p = game.Players:GetPlayerFromCharacter(obj)
+                        n_text = config.usedisplayname and p.DisplayName or p.Name
+                    end
+                    append_label(n_text, pos_n)
                 end
                 
                 if show_h then
-                    label = label .. " [" .. math.floor(hum.Health) .. " health]"
+                    append_label("[" .. math.floor(hum.Health) .. " health]", pos_h)
                 end
                 
                 if show_d then
-                    label = label .. " [" .. math.floor(dist) .. " studs]"
+                    append_label("[" .. math.floor(dist) .. " studs]", pos_d)
                 end
 
-                if label ~= "" then
-                    name.Text = label
-                    name.Position = Vector2.new(top.X, bottom.Y + 5)
-                    name.Color = Color3.new(1, 1, 1)
-                    name.Visible = true
+                if t_label ~= "" then
+                    text_top.Text = t_label
+                    text_top.Position = Vector2.new(top.X, top.Y - 18)
+                    text_top.Color = Color3.new(1, 1, 1)
+                    text_top.Visible = true
                 else
-                    name.Visible = false
+                    text_top.Visible = false
                 end
+
+                if b_label ~= "" then
+                    text_bottom.Text = b_label
+                    text_bottom.Position = Vector2.new(top.X, bottom.Y + 5)
+                    text_bottom.Color = Color3.new(1, 1, 1)
+                    text_bottom.Visible = true
+                else
+                    text_bottom.Visible = false
+                end
+
             else
                 box.Visible = false
-                name.Visible = false
+                text_top.Visible = false
+                text_bottom.Visible = false
             end
             
             local show_skeleton = isnpc and config.npcshowskeleton or config.showskeleton
             if show_skeleton then
-                for i, conn in ipairs(skeleton_parts) do
-                    local part1 = obj:FindFirstChild(conn[1])
-                    local part2 = obj:FindFirstChild(conn[2])
+                local head = obj:FindFirstChild("Head")
+                if head then
+                    local head_pos, head_on = cam:WorldToViewportPoint(head.Position)
+                    local head_top_pos = cam:WorldToViewportPoint(head.Position + Vector3.new(0, head.Size.Y / 2, 0))
+                    
+                    if head_on then
+                        local radius = math.abs(head_top_pos.Y - head_pos.Y)
+                        head_circle.Position = Vector2.new(head_pos.X, head_pos.Y)
+                        head_circle.Radius = radius
+                        head_circle.Color = current_color
+                        head_circle.Visible = true
+                    else
+                        head_circle.Visible = false
+                    end
+                else
+                    head_circle.Visible = false
+                end
+
+                for i, con in ipairs(skeleton_parts) do
+                    local part1 = obj:FindFirstChild(con[1])
+                    local part2 = obj:FindFirstChild(con[2])
                     
                     if part1 and part2 then
                         local pos1, on1_s = cam:WorldToViewportPoint(part1.Position)
@@ -158,16 +226,21 @@ local function draw_esp(obj, hum, isnpc, config)
                     end
                 end
             else
+                head_circle.Visible = false
                 for _, line in ipairs(skeleton_lines) do line.Visible = false end
             end
         else
             box.Visible = false
-            name.Visible = false
+            text_top.Visible = false
+            text_bottom.Visible = false
+            head_circle.Visible = false
             for _, line in ipairs(skeleton_lines) do line.Visible = false end
             
             if not obj or not obj.Parent then
                 box:Remove()
-                name:Remove()
+                text_top:Remove()
+                text_bottom:Remove()
+                head_circle:Remove()
                 for _, line in ipairs(skeleton_lines) do line:Remove() end
             end
         end
@@ -290,7 +363,4 @@ return functions
    functionlib.useteamcolor = true/false    -- use team color
    functionlib.boxcolor = Color3.fromRGB(255, 255, 255)
 ================================================================================
-
-
-ps: if anyone knows how to do skeleton better please inform me this shit was tedious
 ]]
