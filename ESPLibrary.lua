@@ -8,7 +8,7 @@ local functions = {
     useteamcolor = true,
     showhealth = true,
     showname = true,
-    usedisplayname = true,
+    usedisplayname = false,
     
     -- npc settings
     npcenabled = true,
@@ -21,11 +21,11 @@ local functions = {
     itemsenabled = true,
     itemcolor = Color3.new(0, 1, 1),
     showitemname = true,
-    itemcheck_enabled = false,
-    itemcheck_path = workspace 
+    useitemfilter = true,
+    targetitems = {}
 }
 
-function draw_esp(obj, hum, isnpc, config)
+local function draw_esp(obj, hum, isnpc, config)
     local rs = game:GetService("RunService")
     local cam = workspace.CurrentCamera
     
@@ -114,7 +114,7 @@ function functions:npc_esp(model)
     end
 end
 
-function functions:item_esp(obj)
+function functions:item_esp(obj, custom_name)
     local rs = game:GetService("RunService")
     local cam = workspace.CurrentCamera
     local name = Drawing.new("Text")
@@ -124,11 +124,11 @@ function functions:item_esp(obj)
     name.Outline = true
 
     rs.RenderStepped:Connect(function()
-        if self.itemcheck_enabled and self.itemsenabled and obj and obj.Parent then
+        if self.itemsenabled and obj and obj.Parent then
             local pos, on = cam:WorldToViewportPoint(obj.Position)
             if on then
                 name.Color = self.itemcolor
-                name.Text = self.showitemname and obj.Name or ""
+                name.Text = self.showitemname and (custom_name or obj.Name) or ""
                 name.Position = Vector2.new(pos.X, pos.Y)
                 name.Visible = self.showitemname
             else
@@ -141,23 +141,34 @@ function functions:item_esp(obj)
     end)
 end
 
-function functions:itemcheck()
-    function add(v)
-        if v:IsA("BasePart") or (v:IsA("Model") and v:FindFirstChildOfClass("BasePart")) then
-            local target = v:IsA("BasePart") and v or v:FindFirstChildOfClass("BasePart")
-            self:item_esp(target)
-        end
+function functions:track_items(folder, specific_names)
+    if type(specific_names) == "table" then
+        self.useitemfilter = true
+        self.targetitems = specific_names
     end
 
-    self.itemcheck_path.ChildAdded:Connect(function(v)
-        if self.itemcheck_enabled then
-            add(v)
-        end
-    end)
-
-    for _, v in pairs(self.itemcheck_path:GetChildren()) do
-        add(v)
+    local function check_item(obj)
+        task.spawn(function()
+            task.wait(0.1)
+            local obj_name = obj.Name
+            
+            if self.useitemfilter and not table.find(self.targetitems, obj_name) then 
+                return 
+            end
+            
+            local target_part = obj
+            if obj:IsA("Model") then
+                target_part = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+            end
+            
+            if target_part and target_part:IsA("BasePart") then
+                self:item_esp(target_part, obj_name)
+            end
+        end)
     end
+
+    for _, v in pairs(folder:GetChildren()) do check_item(v) end
+    folder.ChildAdded:Connect(function(v) check_item(v) end)
 end
 
 return functions
@@ -176,42 +187,22 @@ return functions
    end
    game.Players.PlayerAdded:Connect(function(v) functionlib:esp(v) end)
 
-3. SETTING UP NPC ESP (In a specific folder):
-   functionlib.NpcPath = workspace.Enemies -- Set the path
-   
-   for _, v in pairs(functionlib.NpcPath:GetChildren()) do
-       functionlib:npc_esp(v)
-   end
-   functionlib.NpcPath.ChildAdded:Connect(function(v)
-       functionlib:npc_esp(v)
-   end)
+3. SETTING UP NPC ESP:
+   functionlib.npcpath = workspace.Enemies 
+   for _, v in pairs(functionlib.npcpath:GetChildren()) do functionlib:npc_esp(v) end
+   functionlib.npcpath.ChildAdded:Connect(function(v) functionlib:npc_esp(v) end)
 
 4. SETTING UP ITEM ESP:
-   for _, v in pairs(workspace.Drops:GetChildren()) do
-       functionlib:item_esp(v)
-   end
+   functionlib:track_items(workspace.Drops, {"Keycard", "Medkit", "Secret Weapon"})
 
-5. STARTING THE ITEM CHECK:
-   functionlib.itemcheck_path = workspace.Drops -- Folder to watch
-   functionlib:itemcheck()
-
-6. GUI TOGGLE EXAMPLES (Connect these to your buttons):
-   -- Toggles
-   functionlib.Enabled = true/false            -- Toggle Players
-   functionlib.NpcEnabled = true/false         -- Toggle NPCs
-   functionlib.ItemsEnabled = true/false       -- Toggle Items
-   functionlib.itemcheck_enabled = true/false  -- Toggle for item labels
-   functionlib.showitemname = true/false       -- Toggle text visibility
-   functionlib.itemcolor = Color3.new(0, 1, 0) -- Update color globally
-
-   -- Visual Toggles
-   functionlib.ShowHealth = true/false         -- Show/Hide Player Health
-   functionlib.ShowName = true/false           -- Show/Hide Player Names
-   functionlib.UseTeamColor = true/false       -- Use Team Colors for Box
-   
-   -- Colors
-   functionlib.BoxColor = Color3.fromRGB(255, 0, 0) -- Change Player Box Color
-   functionlib.NpcColor = Color3.fromRGB(0, 255, 0) -- Change NPC Box Color
-
+5. GUI TOGGLE EXAMPLES:
+   functionlib.enabled = true/false         -- toggle players
+   functionlib.npcenabled = true/false      -- toggle npcs
+   functionlib.itemsenabled = true/false    -- toggle items
+   functionlib.useitemfilter = true/false   -- toggle filtering items by name
+   functionlib.showhealth = true/false      -- show player health
+   functionlib.showname = true/false        -- show player names
+   functionlib.useteamcolor = true/false    -- use team color
+   functionlib.boxcolor = Color3.fromRGB(255, 255, 255)
 ================================================================================
 ]]
