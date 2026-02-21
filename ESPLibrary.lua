@@ -1,6 +1,6 @@
-
 --[[
   Made completely by deproxies <3
+  enjoy
 ]]
 local functions = {
     -- player settings
@@ -65,7 +65,7 @@ local skeleton_parts = {
     {"Torso", "Right Leg"}
 }
 
-local function draw_esp(obj, hum, isnpc, config)
+local function draw_esp(obj, hum, isnpc, config, custom_player)
     local rs = game:GetService("RunService")
     local cam = workspace.CurrentCamera
     
@@ -113,7 +113,7 @@ local function draw_esp(obj, hum, isnpc, config)
             if isnpc then
                 current_color = config.npccolor
             else
-                local p = game.Players:GetPlayerFromCharacter(obj)
+                local p = custom_player or game.Players:GetPlayerFromCharacter(obj)
                 current_color = (config.useteamcolor and p and p.TeamColor) and p.TeamColor.Color or config.boxcolor
             end
 
@@ -146,9 +146,15 @@ local function draw_esp(obj, hum, isnpc, config)
 
                 if show_n then
                     local n_text = ""
-                    if isnpc then n_text = obj.Name else
-                        local p = game.Players:GetPlayerFromCharacter(obj)
-                        n_text = config.usedisplayname and p.DisplayName or p.Name
+                    if isnpc then 
+                        n_text = obj.Name 
+                    else
+                        local p = custom_player or game.Players:GetPlayerFromCharacter(obj)
+                        if p then
+                            n_text = config.usedisplayname and p.DisplayName or p.Name
+                        else
+                            n_text = obj.Name
+                        end
                     end
                     append_label(n_text, pos_n)
                 end
@@ -281,12 +287,20 @@ function functions:item_esp(obj, custom_name)
     end)
 end
 
-function functions:esp(p)
+function functions:esp(p, custom_character)
+    if custom_character then
+        local hum = custom_character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            draw_esp(custom_character, hum, false, self, p)
+        end
+        return
+    end
+
     p.CharacterAdded:Connect(function(c)
-        draw_esp(c, c:WaitForChild("Humanoid"), false, self)
+        draw_esp(c, c:WaitForChild("Humanoid"), false, self, p)
     end)
     if p.Character then
-        draw_esp(p.Character, p.Character:FindFirstChild("Humanoid"), false, self)
+        draw_esp(p.Character, p.Character:FindFirstChild("Humanoid"), false, self, p)
     end
 end
 
@@ -343,17 +357,25 @@ return functions
    end
    game.Players.PlayerAdded:Connect(function(v) functionlib:esp(v) end)
 
-3. SETTING UP NPC ESP:
+3. SETTING UP CUSTOM CHARACTER ESP:
+   -- If a game uses a separate model for the player instead of their real Character:
+   -- functionlib:esp(PlayerInstance, CustomModelInstance)
+   local target_player = game.Players:FindFirstChild("deproxies")
+   local custom_model = workspace.CustomCharacters:FindFirstChild("deproxies_model")
+   functionlib:esp(target_player, custom_model)
+
+4. SETTING UP NPC ESP:
    functionlib.npcpath = workspace.Enemies 
    for _, v in pairs(functionlib.npcpath:GetChildren()) do functionlib:npc_esp(v) end
    functionlib.npcpath.ChildAdded:Connect(function(v) functionlib:npc_esp(v) end)
 
-4. SETTING UP ITEM ESP:
+5. SETTING UP ITEM ESP:
    functionlib:track_items(workspace.Drops, {"Keycard", "Medkit", "Secret Weapon"})
 
-5. GUI TOGGLE EXAMPLES:
+6. GUI TOGGLE EXAMPLES:
    functionlib.enabled = true/false         -- toggle players
    functionlib.showskeleton = true/false    -- toggle player skeletons
+   functionlib.namePosition = "Top"         -- put name on "Top" or "Bottom"
    functionlib.npcenabled = true/false      -- toggle npcs
    functionlib.npcshowskeleton = true/false -- toggle npc skeletons
    functionlib.itemsenabled = true/false    -- toggle items
