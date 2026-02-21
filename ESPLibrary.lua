@@ -147,7 +147,7 @@ return functions
 ================================================================================
 
 1. INITIALIZING THE LIBRARY:
-   local functionlib = loadstring(game:HttpGet("URL_HERE"))()
+   local functionlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/deproxies/Main/refs/heads/main/ESPLibrary.lua"))()
 
 2. SETTING UP PLAYER ESP:
    for _, v in pairs(game.Players:GetPlayers()) do
