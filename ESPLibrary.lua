@@ -113,7 +113,7 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
             if isnpc then
                 current_color = config.npccolor
             else
-                local p = custom_player or game.Players:GetPlayerFromCharacter(obj)
+                local p = custom_player or game:GetService("Players"):GetPlayerFromCharacter(obj)
                 current_color = (config.useteamcolor and p and p.TeamColor) and p.TeamColor.Color or config.boxcolor
             end
 
@@ -149,7 +149,7 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
                     if isnpc then 
                         n_text = obj.Name 
                     else
-                        local p = custom_player or game.Players:GetPlayerFromCharacter(obj)
+                        local p = custom_player or game:GetService("Players"):GetPlayerFromCharacter(obj)
                         if p then
                             n_text = config.usedisplayname and p.DisplayName or p.Name
                         else
@@ -352,15 +352,15 @@ return functions
    local functionlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/deproxies/Main/refs/heads/main/ESPLibrary.lua"))()
 
 2. SETTING UP PLAYER ESP:
-   for _, v in pairs(game.Players:GetPlayers()) do
-       if v ~= game.Players.LocalPlayer then functionlib:esp(v) end
+   for _, v in pairs(game:GetService("Players"):GetPlayers()) do
+       if v ~= game:GetService("Players").LocalPlayer then functionlib:esp(v) end
    end
-   game.Players.PlayerAdded:Connect(function(v) functionlib:esp(v) end)
+   game:GetService("Players").PlayerAdded:Connect(function(v) functionlib:esp(v) end)
 
 3. SETTING UP CUSTOM CHARACTER ESP:
    -- If a game uses a separate model for the player instead of their real Character:
    -- functionlib:esp(PlayerInstance, CustomModelInstance)
-   local target_player = game.Players:FindFirstChild("deproxies")
+   local target_player = game:GetService("Players"):FindFirstChild("deproxies")
    local custom_model = workspace.CustomCharacters:FindFirstChild("deproxies_model")
    functionlib:esp(target_player, custom_model)
 
