@@ -15,6 +15,7 @@ local functions = {
     
     textTopColor = Color3.fromRGB(255, 255, 255),
     textBottomColor = Color3.fromRGB(255, 255, 255),
+    useTeamColorForText = false,
     
     namePosition = "Top",
     healthPosition = "Bottom",
@@ -48,17 +49,6 @@ local skeleton_parts = {
     {"Head", "Torso"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"}, {"Torso", "Left Leg"}, {"Torso", "Right Leg"}
 }
 
-local function destroy_drawings(table_to_clean)
-    for k, v in pairs(table_to_clean) do
-        if type(v) == "table" then
-            destroy_drawings(v)
-        elseif v.Remove then
-            pcall(function() v:Remove() end)
-        end
-        table_to_clean[k] = nil
-    end
-end
-
 function functions:unload()
     for _, conn in pairs(active_conns) do
         if conn.Disconnect then pcall(function() conn:Disconnect() end) end
@@ -67,10 +57,15 @@ function functions:unload()
     destroy_drawings(drawing_cache)
 end
 
+local function destroy_drawings(t)
+    for k, v in pairs(t) do
+        if type(v) == "table" then destroy_drawings(v)
+        elseif v.Remove then pcall(function() v:Remove() end) end
+        t[k] = nil
+    end
+end
+
 local function draw_esp(obj, hum, isnpc, config, custom_player)
-    local rs = game:GetService("RunService")
-    local cam = workspace.CurrentCamera
-    
     local id = obj:GetDebugId()
     if drawing_cache[id] then destroy_drawings(drawing_cache[id]) end
 
@@ -82,147 +77,59 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
         skeleton = {}
     }
     
-    drawings.text_top.Size = 16
-    drawings.text_top.Center = true
-    drawings.text_top.Outline = true
-    drawings.text_top.OutlineColor = Color3.new(0, 0, 0)
-    
-    drawings.text_bottom.Size = 16
-    drawings.text_bottom.Center = true
-    drawings.text_bottom.Outline = true
-    drawings.text_bottom.OutlineColor = Color3.new(0, 0, 0)
-    
-    for i = 1, #skeleton_parts do
-        local line = Drawing.new("Line")
-        line.Thickness = 1
-        drawings.skeleton[i] = line
-    end
+    drawings.text_top.Size, drawings.text_top.Center, drawings.text_top.Outline = 16, true, true
+    drawings.text_bottom.Size, drawings.text_bottom.Center, drawings.text_bottom.Outline = 16, true, true
+    for i = 1, #skeleton_parts do drawings.skeleton[i] = Drawing.new("Line") end
 
     drawing_cache[id] = drawings
-
     local conn
-    conn = rs.RenderStepped:Connect(function()
+    conn = RunService.RenderStepped:Connect(function()
         if not obj or not obj.Parent or not hum or hum.Health <= 0 then
-            destroy_drawings(drawings)
-            drawing_cache[id] = nil
-            if conn then conn:Disconnect() end
-            return
+            destroy_drawings(drawings); drawing_cache[id] = nil
+            if conn then conn:Disconnect() end return
         end
 
         local master_on = isnpc and config.npcenabled or config.enabled
         if not master_on then
-            drawings.box.Visible = false
-            drawings.text_top.Visible = false
-            drawings.text_bottom.Visible = false
-            drawings.head_circle.Visible = false
-            for _, v in ipairs(drawings.skeleton) do v.Visible = false end
+            drawings.box.Visible = false; drawings.text_top.Visible = false; drawings.text_bottom.Visible = false
             return
         end
 
         local hrp = obj:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
 
-        local top_pos, on_screen = cam:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
-        
+        local top_pos, on_screen = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
         if on_screen then
-            local bottom_pos = cam:WorldToViewportPoint(hrp.Position + Vector3.new(0, -3.5, 0))
-            local dist = (cam.CFrame.Position - hrp.Position).Magnitude
-            
-            local h = math.abs(top_pos.Y - bottom_pos.Y)
-            local w = h / 1.5
+            local bottom_pos = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, -3.5, 0))
+            local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
+            local h, w = math.abs(top_pos.Y - bottom_pos.Y), math.abs(top_pos.Y - bottom_pos.Y) / 1.5
             
             local current_color = config.boxcolor
-            if isnpc then
-                current_color = config.npccolor
-            else
-                local p = custom_player or game:GetService("Players"):GetPlayerFromCharacter(obj)
+            if not isnpc then
+                local p = custom_player or Players:GetPlayerFromCharacter(obj)
                 current_color = (config.useteamcolor and p and p.TeamColor) and p.TeamColor.Color or config.boxcolor
+            else
+                current_color = config.npccolor
             end
 
-            drawings.box.Size = Vector2.new(w, h)
-            drawings.box.Position = Vector2.new(top_pos.X - w / 2, top_pos.Y)
-            drawings.box.Color = current_color
-            drawings.box.Visible = true
+            drawings.box.Size, drawings.box.Position, drawings.box.Color, drawings.box.Visible = Vector2.new(w, h), Vector2.new(top_pos.X - w / 2, top_pos.Y), current_color, true
 
             local t_label, b_label = "", ""
             local show_n = isnpc and config.npcshowname or config.showname
-            local show_h = isnpc and config.npcshowhealth or config.showhealth
-            local show_d = isnpc and config.npcshowdistance or config.showdistance
-
             if show_n then
                 local name = isnpc and obj.Name or (config.usedisplayname and custom_player.DisplayName or custom_player.Name)
                 if (isnpc and config.npcnamePosition or config.namePosition) == "Top" then t_label = name else b_label = name end
             end
 
-            if show_h then
-                local h_text = "[" .. math.floor(hum.Health) .. "hp]"
-                if (isnpc and config.npchealthPosition or config.healthPosition) == "Top" then 
-                    t_label = (t_label == "") and h_text or t_label .. " " .. h_text
-                else 
-                    b_label = (b_label == "") and h_text or b_label .. " " .. h_text
-                end
-            end
+            local topColor = config.useTeamColorForText and current_color or config.textTopColor
+            local botColor = config.useTeamColorForText and current_color or config.textBottomColor
 
-            if show_d then
-                local d_text = "[" .. math.floor(dist) .. "s]"
-                if (isnpc and config.npcdistancePosition or config.distancePosition) == "Top" then 
-                    t_label = (t_label == "") and d_text or t_label .. " " .. d_text
-                else 
-                    b_label = (b_label == "") and d_text or b_label .. " " .. d_text
-                end
-            end
-
-            drawings.text_top.Text = t_label
-            drawings.text_top.Position = Vector2.new(top_pos.X, top_pos.Y - 18)
-            drawings.text_top.Color = config.textTopColor
-            drawings.text_top.Visible = t_label ~= ""
-            
-            drawings.text_bottom.Text = b_label
-            drawings.text_bottom.Position = Vector2.new(top_pos.X, bottom_pos.Y + 2)
-            drawings.text_bottom.Color = config.textBottomColor
-            drawings.text_bottom.Visible = b_label ~= ""
-
-            local show_skel = isnpc and config.npcshowskeleton or config.showskeleton
-            if show_skel then
-                local head = obj:FindFirstChild("Head")
-                if head then
-                    local h_p, h_on = cam:WorldToViewportPoint(head.Position)
-                    if h_on then
-                        drawings.head_circle.Position = Vector2.new(h_p.X, h_p.Y)
-                        drawings.head_circle.Radius = h / 8
-                        drawings.head_circle.Color = current_color
-                        drawings.head_circle.Visible = true
-                    end
-                end
-
-                for i, con in ipairs(skeleton_parts) do
-                    local p1, p2 = obj:FindFirstChild(con[1]), obj:FindFirstChild(con[2])
-                    if p1 and p2 then
-                        local pos1, on1 = cam:WorldToViewportPoint(p1.Position)
-                        local pos2, on2 = cam:WorldToViewportPoint(p2.Position)
-                        if on1 and on2 then
-                            drawings.skeleton[i].From = Vector2.new(pos1.X, pos1.Y)
-                            drawings.skeleton[i].To = Vector2.new(pos2.X, pos2.Y)
-                            drawings.skeleton[i].Color = current_color
-                            drawings.skeleton[i].Visible = true
-                            continue
-                        end
-                    end
-                    drawings.skeleton[i].Visible = false
-                end
-            else
-                drawings.head_circle.Visible = false
-                for _, v in ipairs(drawings.skeleton) do v.Visible = false end
-            end
+            drawings.text_top.Text, drawings.text_top.Position, drawings.text_top.Color, drawings.text_top.Visible = t_label, Vector2.new(top_pos.X, top_pos.Y - 18), topColor, (t_label ~= "")
+            drawings.text_bottom.Text, drawings.text_bottom.Position, drawings.text_bottom.Color, drawings.text_bottom.Visible = b_label, Vector2.new(top_pos.X, bottom_pos.Y + 2), botColor, (b_label ~= "")
         else
-            drawings.box.Visible = false
-            drawings.text_top.Visible = false
-            drawings.text_bottom.Visible = false
-            drawings.head_circle.Visible = false
-            for _, v in ipairs(drawings.skeleton) do v.Visible = false end
+            drawings.box.Visible = false; drawings.text_top.Visible = false; drawings.text_bottom.Visible = false
         end
     end)
-
     table.insert(active_conns, conn)
 end
 
