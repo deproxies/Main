@@ -79,14 +79,15 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
         skeleton = {}
     }
     
-    drawings.box.Thickness = 1
     drawings.text_top.Size = 16
     drawings.text_top.Center = true
     drawings.text_top.Outline = true
+    drawings.text_top.OutlineColor = Color3.new(0, 0, 0)
+    
     drawings.text_bottom.Size = 16
     drawings.text_bottom.Center = true
     drawings.text_bottom.Outline = true
-    drawings.head_circle.Thickness = 1
+    drawings.text_bottom.OutlineColor = Color3.new(0, 0, 0)
     
     for i = 1, #skeleton_parts do
         local line = Drawing.new("Line")
@@ -169,12 +170,10 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
             end
 
             drawings.text_top.Text = t_label
-            drawings.text_top.Position = Vector2.new(top_pos.X, top_pos.Y - 18)
             drawings.text_top.Color = current_color
             drawings.text_top.Visible = t_label ~= ""
             
             drawings.text_bottom.Text = b_label
-            drawings.text_bottom.Position = Vector2.new(top_pos.X, bottom_pos.Y + 5)
             drawings.text_bottom.Color = current_color
             drawings.text_bottom.Visible = b_label ~= ""
 
