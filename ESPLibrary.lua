@@ -13,6 +13,9 @@ local functions = {
     showname = true,
     usedisplayname = false,
     
+    textTopColor = Color3.fromRGB(255, 255, 255),
+    textBottomColor = Color3.fromRGB(255, 255, 255),
+    
     namePosition = "Top",
     healthPosition = "Bottom",
     distancePosition = "Bottom",
@@ -171,12 +174,12 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
 
             drawings.text_top.Text = t_label
             drawings.text_top.Position = Vector2.new(top_pos.X, top_pos.Y - 18)
-            drawings.text_top.Color = current_color
+            drawings.text_top.Color = config.textTopColor
             drawings.text_top.Visible = t_label ~= ""
             
             drawings.text_bottom.Text = b_label
             drawings.text_bottom.Position = Vector2.new(top_pos.X, bottom_pos.Y + 2)
-            drawings.text_bottom.Color = current_color
+            drawings.text_bottom.Color = config.textBottomColor
             drawings.text_bottom.Visible = b_label ~= ""
 
             local show_skel = isnpc and config.npcshowskeleton or config.showskeleton
@@ -293,7 +296,6 @@ function functions:track_items(folder, filter)
 end
 
 return functions
-
 --[[
 ================================================================================
                                 USAGE EXAMPLES
