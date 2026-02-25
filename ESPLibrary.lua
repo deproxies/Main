@@ -79,14 +79,15 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
         skeleton = {}
     }
     
-    drawings.box.Thickness = 1
     drawings.text_top.Size = 16
     drawings.text_top.Center = true
     drawings.text_top.Outline = true
+    drawings.text_top.OutlineColor = Color3.new(0, 0, 0)
+    
     drawings.text_bottom.Size = 16
     drawings.text_bottom.Center = true
     drawings.text_bottom.Outline = true
-    drawings.head_circle.Thickness = 1
+    drawings.text_bottom.OutlineColor = Color3.new(0, 0, 0)
     
     for i = 1, #skeleton_parts do
         local line = Drawing.new("Line")
@@ -132,11 +133,7 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
                 current_color = config.npccolor
             else
                 local p = custom_player or game:GetService("Players"):GetPlayerFromCharacter(obj)
-                if config.useteamcolor and p and p.TeamColor then
-                    current_color = p.TeamColor.Color
-                else
-                    current_color = config.boxcolor
-                end
+                current_color = (config.useteamcolor and p and p.TeamColor) and p.TeamColor.Color or config.boxcolor
             end
 
             drawings.box.Size = Vector2.new(w, h)
@@ -162,7 +159,7 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
                     b_label = (b_label == "") and h_text or b_label .. " " .. h_text
                 end
             end
-            
+
             if show_d then
                 local d_text = "[" .. math.floor(dist) .. "s]"
                 if (isnpc and config.npcdistancePosition or config.distancePosition) == "Top" then 
@@ -175,12 +172,12 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
             drawings.text_top.Text = t_label
             drawings.text_top.Position = Vector2.new(top_pos.X, top_pos.Y - 18)
             drawings.text_top.Color = current_color
-            drawings.text_top.Visible = (t_label ~= "")
+            drawings.text_top.Visible = t_label ~= ""
             
             drawings.text_bottom.Text = b_label
-            drawings.text_bottom.Position = Vector2.new(top_pos.X, bottom_pos.Y + 5)
+            drawings.text_bottom.Position = Vector2.new(top_pos.X, bottom_pos.Y + 2)
             drawings.text_bottom.Color = current_color
-            drawings.text_bottom.Visible = (b_label ~= "")
+            drawings.text_bottom.Visible = b_label ~= ""
 
             local show_skel = isnpc and config.npcshowskeleton or config.showskeleton
             if show_skel then
