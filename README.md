@@ -10,7 +10,7 @@
 | Aimbot Configuration | ESP Visuals |
 | :---: | :---: |
 | ![Aimbot Menu](https://i.imgur.com/tOd9ZRp.png) | ![ESP Example](https://i.imgur.com/sviEUZp.png) |
-| *Fine-tune smoothing, FOV, and targeting.* | *Clean 2D Drawing or 3D Highlight ESP.* |
+| *Fine-tune smoothing, FOV, and targeting.* | *Clean 2D Drawing with Item ESP.* |
 
 ---
 
@@ -67,7 +67,7 @@ To keep visual information clear during combat, the ESP prioritizes colors in th
 
 ## 🤝 Credits & Support
 
-* **Lead Developer:** deproxies
+**Lead Developer:** deproxies (*deproxies* on Scriptblox, RScripts, Discord etc)
 * **UI Framework:** Obsidian Library
 * **Testing & Suggestions:** 7stk
 
