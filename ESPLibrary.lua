@@ -153,18 +153,29 @@ local function draw_esp(obj, hum, isnpc, config, custom_player)
             if show_h then
                 local h_text = "[" .. math.floor(hum.Health) .. "hp]"
                 if (isnpc and config.npchealthPosition or config.healthPosition) == "Top" then 
-                    t_label = t_label == "" and h_text or t_label .. " " .. h_text
+                    t_label = (t_label == "") and h_text or t_label .. " " .. h_text
                 else 
-                    b_label = b_label == "" and h_text or b_label .. " " .. h_text
+                    b_label = (b_label == "") and h_text or b_label .. " " .. h_text
+                end
+            end
+
+            if show_d then
+                local d_text = "[" .. math.floor(dist) .. "s]"
+                if (isnpc and config.npcdistancePosition or config.distancePosition) == "Top" then 
+                    t_label = (t_label == "") and d_text or t_label .. " " .. d_text
+                else 
+                    b_label = (b_label == "") and d_text or b_label .. " " .. d_text
                 end
             end
 
             drawings.text_top.Text = t_label
             drawings.text_top.Position = Vector2.new(top_pos.X, top_pos.Y - 18)
+            drawings.text_top.Color = current_color
             drawings.text_top.Visible = t_label ~= ""
             
             drawings.text_bottom.Text = b_label
             drawings.text_bottom.Position = Vector2.new(top_pos.X, bottom_pos.Y + 5)
+            drawings.text_bottom.Color = current_color
             drawings.text_bottom.Visible = b_label ~= ""
 
             local show_skel = isnpc and config.npcshowskeleton or config.showskeleton
